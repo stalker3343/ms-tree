@@ -5,27 +5,33 @@ export interface TreeItem {
   parent: TreeId | null
 }
 
+/** Хранит корректное дерево с уникальными id; объекты элементов передаются по ссылке. */
 export class TreeStore<T extends TreeItem = TreeItem> {
   private items = new Map<TreeId, T>()
   private children = new Map<TreeId | null, Map<TreeId, T>>()
   private parents = new Map<TreeId, TreeId | null>()
 
+  /** Создаёт хранилище из массива элементов. */
   constructor(items: readonly T[]) {
     this.setItems(items)
   }
 
+  /** Возвращает все элементы в порядке добавления. */
   getAll(): T[] {
     return Array.from(this.items.values())
   }
 
+  /** Возвращает элемент по id или undefined, если он не найден. */
   getItem(id: TreeId): T | undefined {
     return this.items.get(id)
   }
 
+  /** Возвращает непосредственных потомков в порядке добавления. */
   getChildren(id: TreeId): T[] {
     return Array.from(this.children.get(id)?.values() ?? [])
   }
 
+  /** Возвращает всех потомков в порядке обхода дерева в глубину. */
   getAllChildren(id: TreeId): T[] {
     const result: T[] = []
     const stack = this.getChildren(id).reverse()
@@ -43,6 +49,7 @@ export class TreeStore<T extends TreeItem = TreeItem> {
     return result
   }
 
+  /** Возвращает путь от самого элемента до корня включительно. */
   getAllParents(id: TreeId): T[] {
     const result: T[] = []
     let item = this.items.get(id)
@@ -55,6 +62,7 @@ export class TreeStore<T extends TreeItem = TreeItem> {
     return result
   }
 
+  /** Полностью заменяет содержимое хранилища. */
   setItems(items: readonly T[]): void {
     this.items.clear()
     this.children.clear()
@@ -64,6 +72,7 @@ export class TreeStore<T extends TreeItem = TreeItem> {
     }
   }
 
+  /** Добавляет элемент с уникальным id. */
   addItem(item: T): void {
     this.items.set(item.id, item)
     this.parents.set(item.id, item.parent)
@@ -75,6 +84,7 @@ export class TreeStore<T extends TreeItem = TreeItem> {
     siblings.set(item.id, item)
   }
 
+  /** Удаляет элемент и всех его потомков; отсутствующий id игнорируется. */
   removeItem(id: TreeId): void {
     const item = this.items.get(id)
     if (!item) return
@@ -95,6 +105,7 @@ export class TreeStore<T extends TreeItem = TreeItem> {
     }
   }
 
+  /** Заменяет существующий элемент; при изменении parent перемещает его ветку. */
   updateItem(item: T): void {
     const previous = this.items.get(item.id)
     if (!previous) return
